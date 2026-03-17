@@ -22,8 +22,8 @@ public class GlobalExceptionHandler {
       HttpMessageNotReadableException.class
   })
   public ResponseEntity<ApiResponse<Void>> handleBadRequest(Exception e) {
-    log.warn("Bad request exception: {}", e.getMessage());
-
+    log.warn("Bad request exception type={}", e.getClass().getSimpleName());
+    log.debug("Bad request exception detail", e);
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
         ApiResponse.fail(ErrorStatus.BAD_REQUEST)
     );
