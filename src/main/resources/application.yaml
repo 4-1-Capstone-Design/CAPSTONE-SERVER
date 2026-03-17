@@ -1,0 +1,68 @@
+server:
+  port: 8080
+  servlet:
+    encoding:
+      force: true
+      charset: UTF-8
+      enabled: true
+
+spring:
+  application:
+    name: capstone
+
+  # 1. Database (MySQL)
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/capstone_db
+    username: root
+    password: 1234
+
+  # 2. JPA
+  jpa:
+    open-in-view: true
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: false
+        default_batch_fetch_size: 100
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+  # 3. Redis
+  data:
+    redis:
+      host: localhost #${REDIS_HOST}
+      port: 6379 #${REDIS_PORT:6379}
+      # password: ${REDIS_PASSWORD}
+
+  # 5. File Upload (Multipart)
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  # 6. AWS S3 (Spring Cloud AWS)
+  cloud:
+    aws:
+      credentials:
+        access-key: ${AWS_ACCESS_KEY}
+        secret-key: ${AWS_SECRET_KEY}
+      region:
+        static: ap-northeast-2
+      s3:
+        bucket: ${S3_BUCKET_NAME}
+
+
+# 8. Custom JWT Config
+jwt:
+  access-secret-key: dGhpcy1pcy1hY2Nlc3Mta2V5LWZvci0zNnRoLXNvcHQtYXBwamFtLXNvbHBseS1hbmQtd2UtYXJlLXNvbHBseS1zZXJ2ZXI=
+  refresh-secret-key: dGhpcy1pcy1yZWZyZXNoLWtleS1mb3ItMzZ0aC1zb3B0LWFwcGphbS1zb2xwbHktYW5kLXdlLWFyZS1zb2xwbHktc2VydmVy
+  access-token-expire-time: 3600000 # 1시간
+  refresh-token-expire-time: 604800000 # 7일
+
+# 9. Logging
+logging:
+  level:
+    root: INFO
+    org.sopt: DEBUG
