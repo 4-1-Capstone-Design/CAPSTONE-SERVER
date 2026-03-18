@@ -3,14 +3,13 @@ package com.capstone.domain.user.entity;
 import com.capstone.domain.clover.entity.CloverHistory;
 import com.capstone.domain.journal.entity.Journal;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -60,5 +59,17 @@ public class User {
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
     this.role = Role.USER;
+  }
+
+  public static User create(String email, String password, String nickname) {
+    LocalDateTime now = LocalDateTime.now();
+    return User.builder()
+        .email(email)
+        .password(password)
+        .nickname(nickname)
+        .cloverBalance(0L)
+        .createdAt(now)
+        .updatedAt(now)
+        .build();
   }
 }
