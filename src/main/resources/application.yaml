@@ -9,8 +9,8 @@ server:
 spring:
   application:
     name: capstone
-  profiles:
-    active: local
+  #profiles:
+    #active: local
 
   # 1. Database (MySQL)
   datasource:
