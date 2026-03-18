@@ -29,11 +29,17 @@ public enum ErrorStatus {
    * 403 Forbidden
    */
   FORBIDDEN_USER(40300, HttpStatus.FORBIDDEN, "권한이 없는 요청입니다."),
+
   /**
    * 404 Not Found
    */
   USER_NOT_FOUND(40400, HttpStatus.NOT_FOUND, "존재하지 않는 사용자입니다."),
-  ITEM_NOT_FOUND(40401, HttpStatus.NOT_FOUND, "존재하지 않는 상품입니다."),
+
+  /**
+   * 409 Conflict
+   */
+  EMAIL_ALREADY_EXISTS(40900, HttpStatus.CONFLICT, "이미 사용 중인 이메일입니다."),
+  NICKNAME_ALREADY_EXISTS(40901, HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
 
   /**
    * 500 Internal Server Error
