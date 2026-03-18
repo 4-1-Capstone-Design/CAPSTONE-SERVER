@@ -7,6 +7,7 @@ import com.capstone.domain.user.repository.UserRepository;
 import com.capstone.global.error.BusinessException;
 import com.capstone.global.error.ErrorStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,8 +31,18 @@ public class UserService {
         request.nickname()
     );
 
-    User savedUser = userRepository.save(user);
-
+    User savedUser;
+    try {
+      savedUser = userRepository.save(user);
+    } catch (DataIntegrityViolationException e) {
+      if (userRepository.existsByEmail(request.email())) {
+        throw new BusinessException(ErrorStatus.EMAIL_ALREADY_EXISTS);
+      }
+      if (userRepository.existsByNickname(request.nickname())) {
+        throw new BusinessException(ErrorStatus.NICKNAME_ALREADY_EXISTS);
+      }
+      throw e;
+    }
     return SignUpResponseDto.builder()
         .userId(savedUser.getId())
         .email(savedUser.getEmail())
