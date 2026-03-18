@@ -9,6 +9,8 @@ server:
 spring:
   application:
     name: capstone
+  profiles:
+    active: local
 
   # 1. Database (MySQL)
   datasource:
@@ -56,10 +58,9 @@ spring:
 
 # 8. Custom JWT Config
 jwt:
-  access-secret-key: dGhpcy1pcy1hY2Nlc3Mta2V5LWZvci0zNnRoLXNvcHQtYXBwamFtLXNvbHBseS1hbmQtd2UtYXJlLXNvbHBseS1zZXJ2ZXI=
-  refresh-secret-key: dGhpcy1pcy1yZWZyZXNoLWtleS1mb3ItMzZ0aC1zb3B0LWFwcGphbS1zb2xwbHktYW5kLXdlLWFyZS1zb2xwbHktc2VydmVy
-  access-token-expire-time: 3600000 # 1시간
-  refresh-token-expire-time: 604800000 # 7일
+  secret: "dGhpcy1pcy1hY2Nlc3Mta2V5LWZvci0zNnRoLXNvcHQtYXBwamFtLXNvbHBseS1hbmQtd2UtYXJlLXNvbHBseS1zZXJ2ZXI="
+  access-token-validity: 3600000 #1시간
+  refresh-token-validity: 1209600000 #14일
 
 # 9. Logging
 logging:

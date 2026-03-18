@@ -22,7 +22,7 @@ public class User {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @Column(nullable = false, length = 255, unique = true)
+  @Column(length = 255)
   private String email;
 
   @Column(nullable = false, length = 255)
@@ -40,6 +40,10 @@ public class User {
   @Column(name = "updated_at", nullable = false)
   private LocalDateTime updatedAt;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "role", nullable = false)
+  private Role role;
+
   @OneToMany(mappedBy = "user")
   private List<Journal> journals = new ArrayList<>();
 
@@ -47,13 +51,14 @@ public class User {
   private List<CloverHistory> cloverHistories = new ArrayList<>();
 
   @Builder
-  public User(String email, String password, String nickname, Long cloverBalance,
-      LocalDateTime createdAt, LocalDateTime updatedAt) {
+  public User(String email, String password, String nickname,
+      Long cloverBalance, LocalDateTime createdAt, LocalDateTime updatedAt) {
     this.email = email;
     this.password = password;
     this.nickname = nickname;
     this.cloverBalance = cloverBalance;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
+    this.role = Role.USER;
   }
 }
