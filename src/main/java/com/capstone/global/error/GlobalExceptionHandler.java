@@ -60,8 +60,8 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ApiResponse<Void>> handleHttpRequestMethodNotSupportedException(
       HttpRequestMethodNotSupportedException e) {
     log.error("지원하지 않는 HTTP 메서드 요청: {}", e.getMethod());
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-        .body(ApiResponse.fail(ErrorStatus.BAD_REQUEST));
+    return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+        .body(ApiResponse.fail(ErrorStatus.METHOD_NOT_ALLOWED));
   }
 
   @ExceptionHandler(Exception.class)

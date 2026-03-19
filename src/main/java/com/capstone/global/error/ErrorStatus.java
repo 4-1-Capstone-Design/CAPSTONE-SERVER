@@ -40,6 +40,11 @@ public enum ErrorStatus {
   REFRESH_TOKEN_NOT_FOUND(40402, HttpStatus.NOT_FOUND, "저장된 리프레시 토큰이 없습니다."),
 
   /**
+   * 405 Method Not Allowed
+   */
+  METHOD_NOT_ALLOWED(40500, HttpStatus.METHOD_NOT_ALLOWED, "지원하지 않는 HTTP 메서드입니다."),
+
+  /**
    * 409 Conflict
    */
   EMAIL_ALREADY_EXISTS(40900, HttpStatus.CONFLICT, "이미 사용 중인 이메일입니다."),
