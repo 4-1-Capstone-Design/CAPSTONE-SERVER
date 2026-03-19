@@ -1,4 +1,4 @@
-package com.capstone.domain.user.dto.response;
+package com.capstone.domain.auth.dto.response;
 
 import lombok.Builder;
 
