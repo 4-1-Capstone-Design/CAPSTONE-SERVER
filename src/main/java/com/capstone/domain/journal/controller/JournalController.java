@@ -32,4 +32,18 @@ public class JournalController {
     return ResponseEntity.status(SuccessStatus.CREATED.getHttpStatus())
         .body(ApiResponse.created(SuccessStatus.CREATED, response));
   }
+
+  @DeleteMapping("/{journalId}")
+  public ResponseEntity<ApiResponse<Void>> deleteJournal(
+      @RequestHeader("Authorization") String bearerToken,
+      @PathVariable Long journalId
+  ) {
+    String token = bearerToken.replace("Bearer ", "");
+    Long userId = jwtTokenProvider.getUserIdFromToken(token);
+
+    journalService.deleteJournal(userId, journalId);
+
+    return ResponseEntity.status(SuccessStatus.OK.getHttpStatus())
+        .body(ApiResponse.success(SuccessStatus.OK));
+  }
 }

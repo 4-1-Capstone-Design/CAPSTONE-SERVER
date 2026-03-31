@@ -68,4 +68,8 @@ public class Journal {
         .user(user)
         .build();
   }
+
+  public void delete() {
+    this.isDeleted = true;
+  }
 }

@@ -47,4 +47,16 @@ public class JournalService {
         .userId(user.getId())
         .build();
   }
+
+  @Transactional
+  public void deleteJournal(Long userId, Long journalId) {
+    Journal journal = journalRepository.findByIdAndIsDeletedFalse(journalId)
+        .orElseThrow(() -> new BusinessException(ErrorStatus.JOURNAL_NOT_FOUND));
+
+    if (!journal.getUser().getId().equals(userId)) {
+      throw new BusinessException(ErrorStatus.FORBIDDEN_USER);
+    }
+
+    journal.delete();
+  }
 }
