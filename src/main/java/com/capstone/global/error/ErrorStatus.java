@@ -15,6 +15,7 @@ public enum ErrorStatus {
   BAD_REQUEST(40000, HttpStatus.BAD_REQUEST, "잘못된 요청입니다."),
   INVALID_PASSWORD(40001, HttpStatus.BAD_REQUEST, "비밀번호가 일치하지 않습니다."),
   INVALID_REFRESH_TOKEN(40002, HttpStatus.BAD_REQUEST, "유효하지 않은 리프레시 토큰입니다."),
+  JOURNAL_ALREADY_EXISTS_TODAY(40003, HttpStatus.BAD_REQUEST, "오늘은 이미 모닝저널을 작성했습니다."),
 
   /**
    * 401 Unauthorized
