@@ -2,6 +2,7 @@ package com.capstone.domain.journal.service;
 
 import com.capstone.domain.journal.dto.request.JournalCreateRequestDto;
 import com.capstone.domain.journal.dto.response.JournalCreateResponseDto;
+import com.capstone.domain.journal.dto.response.JournalGetResponseDto;
 import com.capstone.domain.journal.entity.Journal;
 import com.capstone.domain.journal.repository.JournalRepository;
 import com.capstone.domain.user.entity.User;
@@ -11,6 +12,7 @@ import com.capstone.global.error.ErrorStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -58,5 +60,21 @@ public class JournalService {
     }
 
     journal.delete();
+  }
+
+  @Transactional(readOnly = true)
+  public JournalGetResponseDto getJournalByDate(Long userId, LocalDate date) {
+
+    Journal journal = journalRepository
+        .findByUserIdAndJournalDateAndIsDeletedFalse(userId, date)
+        .orElseThrow(() -> new BusinessException(ErrorStatus.JOURNAL_NOT_FOUND));
+
+    return JournalGetResponseDto.builder()
+        .journalId(journal.getId())
+        .title(journal.getTitle())
+        .content(journal.getContent())
+        .journalDate(journal.getJournalDate())
+        .createdAt(journal.getCreatedAt())
+        .build();
   }
 }
