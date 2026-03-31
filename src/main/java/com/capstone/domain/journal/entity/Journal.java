@@ -25,16 +25,16 @@ public class Journal {
   @Column(length = 255)
   private String title;
 
-  @Column(columnDefinition = "TEXT")
+  @Column(columnDefinition = "TEXT", nullable = false)
   private String content;
 
-  @Column(name = "journal_date")
+  @Column(name = "journal_date", nullable = false)
   private LocalDate journalDate;
 
-  @Column(name = "created_at")
+  @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
 
-  @Column(name = "is_deleted")
+  @Column(name = "is_deleted", nullable = false)
   private Boolean isDeleted;
 
   @ManyToOne(fetch = FetchType.LAZY)
@@ -56,5 +56,16 @@ public class Journal {
     this.createdAt = createdAt;
     this.isDeleted = isDeleted;
     this.user = user;
+  }
+
+  public static Journal create(String title, String content, LocalDate journalDate, User user) {
+    return Journal.builder()
+        .title(title)
+        .content(content)
+        .journalDate(journalDate)
+        .createdAt(LocalDateTime.now())
+        .isDeleted(false)
+        .user(user)
+        .build();
   }
 }
