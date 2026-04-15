@@ -15,6 +15,7 @@ import com.capstone.domain.user.repository.UserRepository;
 import com.capstone.global.error.BusinessException;
 import com.capstone.global.error.ErrorStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +29,6 @@ import java.util.List;
 public class JournalService {
 
   private static final int MAX_REPLY_SOURCE_LENGTH = 1000;
-  private static final String REPLY_MODEL_NAME = "gpt-5.4";
 
   private final JournalRepository journalRepository;
   private final UserRepository userRepository;
@@ -155,7 +155,7 @@ public class JournalService {
     String aiReply = openAiReplyService.generateReply(truncatedContent);
 
     JournalReply savedReply = journalReplyRepository.save(
-        JournalReply.create(aiReply, REPLY_MODEL_NAME, journal)
+        JournalReply.create(aiReply, openAiReplyService.getModel(), journal)
     );
 
     return JournalReplyResponseDto.builder()

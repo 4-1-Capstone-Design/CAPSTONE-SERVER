@@ -2,11 +2,14 @@ package com.capstone.domain.journal.service;
 
 import com.capstone.global.error.BusinessException;
 import com.capstone.global.error.ErrorStatus;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -14,6 +17,7 @@ import java.util.Map;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class OpenAiReplyService {
 
   @Value("${openai.api-key}")
@@ -25,7 +29,8 @@ public class OpenAiReplyService {
   @Value("${openai.model}")
   private String model;
 
-  private final RestTemplate restTemplate = new RestTemplate();
+  @Qualifier("openAiRestTemplate")
+  private final RestTemplate restTemplate;
 
   public String generateReply(String journalContent) {
     try {
@@ -76,14 +81,18 @@ public class OpenAiReplyService {
 
       if (replyText == null || replyText.isBlank()) {
         log.error("OpenAI text extraction failed. full response={}", response);
-        throw new BusinessException(ErrorStatus.INTERNAL_SERVER_ERROR);
+        throw new BusinessException(ErrorStatus.EXTERNAL_API_ERROR);
       }
 
       return replyText.trim();
 
+    } catch (ResourceAccessException e) {
+      log.error("OpenAI timeout or connection error", e);
+      throw new BusinessException(ErrorStatus.EXTERNAL_API_ERROR);
     } catch (HttpStatusCodeException e) {
-      log.error("OpenAI HTTP error status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString(), e);
-      throw new BusinessException(ErrorStatus.INTERNAL_SERVER_ERROR);
+      log.error("OpenAI HTTP error status={}, body={}",
+          e.getStatusCode(), e.getResponseBodyAsString(), e);
+      throw new BusinessException(ErrorStatus.EXTERNAL_API_ERROR);
     } catch (BusinessException e) {
       throw e;
     } catch (Exception e) {
@@ -92,7 +101,10 @@ public class OpenAiReplyService {
     }
   }
 
-  @SuppressWarnings("unchecked")
+  public String getModel() {
+    return model;
+  }
+
   private String extractOutputText(Map<String, Object> response) {
     if (response == null) {
       return null;
@@ -104,19 +116,13 @@ public class OpenAiReplyService {
     }
 
     for (Object outputItem : outputList) {
-      if (!(outputItem instanceof Map<?, ?> outputMap)) {
-        continue;
-      }
+      if (!(outputItem instanceof Map<?, ?> outputMap)) continue;
 
       Object contentObj = outputMap.get("content");
-      if (!(contentObj instanceof List<?> contentList) || contentList.isEmpty()) {
-        continue;
-      }
+      if (!(contentObj instanceof List<?> contentList) || contentList.isEmpty()) continue;
 
       for (Object contentItem : contentList) {
-        if (!(contentItem instanceof Map<?, ?> contentMap)) {
-          continue;
-        }
+        if (!(contentItem instanceof Map<?, ?> contentMap)) continue;
 
         Object type = contentMap.get("type");
         Object text = contentMap.get("text");
