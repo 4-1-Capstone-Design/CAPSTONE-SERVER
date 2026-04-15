@@ -1,26 +1,22 @@
 package com.capstone.domain.journal.service;
 
 import com.capstone.domain.journal.dto.request.JournalCreateRequestDto;
-import com.capstone.domain.journal.dto.response.JournalCreateResponseDto;
-import com.capstone.domain.journal.dto.response.JournalCursorResponseDto;
-import com.capstone.domain.journal.dto.response.JournalGetResponseDto;
-import com.capstone.domain.journal.dto.response.JournalListItemResponseDto;
-import com.capstone.domain.journal.dto.response.JournalReplyResponseDto;
-import com.capstone.domain.journal.entity.Journal;
-import com.capstone.domain.journal.entity.JournalReply;
-import com.capstone.domain.journal.repository.JournalReplyRepository;
-import com.capstone.domain.journal.repository.JournalRepository;
+import com.capstone.domain.journal.dto.response.*;
+import com.capstone.domain.journal.entity.*;
+import com.capstone.domain.journal.repository.*;
+import com.capstone.domain.keyword.entity.Keyword;
+import com.capstone.domain.keyword.repository.KeywordRepository;
 import com.capstone.domain.user.entity.User;
 import com.capstone.domain.user.repository.UserRepository;
 import com.capstone.global.error.BusinessException;
 import com.capstone.global.error.ErrorStatus;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -33,7 +29,10 @@ public class JournalService {
   private final JournalRepository journalRepository;
   private final UserRepository userRepository;
   private final JournalReplyRepository journalReplyRepository;
-  private final OpenAiReplyService openAiReplyService;
+  private final JournalAnalysisRepository journalAnalysisRepository;
+  private final JournalKeywordRepository journalKeywordRepository;
+  private final KeywordRepository keywordRepository;
+  private final OpenAiJournalAiService openAiJournalAiService;
 
   @Transactional
   public JournalCreateResponseDto createJournal(Long userId, JournalCreateRequestDto request) {
@@ -75,7 +74,6 @@ public class JournalService {
     journal.delete();
   }
 
-  @Transactional(readOnly = true)
   public JournalGetResponseDto getJournalByDate(Long userId, LocalDate date) {
     Journal journal = journalRepository
         .findByUserIdAndJournalDateAndIsDeletedFalse(userId, date)
@@ -90,7 +88,6 @@ public class JournalService {
         .build();
   }
 
-  @Transactional(readOnly = true)
   public JournalCursorResponseDto getJournalList(Long userId, Long cursor, int size) {
     int pageSize = Math.max(1, Math.min(size, 50));
 
@@ -116,10 +113,7 @@ public class JournalService {
             .build())
         .toList();
 
-    Long nextCursor = null;
-    if (hasNext && !journals.isEmpty()) {
-      nextCursor = journals.get(journals.size() - 1).getId();
-    }
+    Long nextCursor = hasNext ? journals.get(journals.size() - 1).getId() : null;
 
     return JournalCursorResponseDto.builder()
         .journals(journalList)
@@ -129,7 +123,8 @@ public class JournalService {
   }
 
   @Transactional
-  public JournalReplyResponseDto createJournalReply(Long userId, Long journalId) {
+  public JournalAnalyzeResponseDto createJournalReply(Long userId, Long journalId) {
+
     Journal journal = journalRepository.findByIdAndIsDeletedFalse(journalId)
         .orElseThrow(() -> new BusinessException(ErrorStatus.JOURNAL_NOT_FOUND));
 
@@ -137,33 +132,132 @@ public class JournalService {
       throw new BusinessException(ErrorStatus.FORBIDDEN_USER);
     }
 
-    JournalReply existingReply = journalReplyRepository
-        .findTopByJournalIdOrderByCreatedAtDesc(journalId)
+    JournalAnalysis existingAnalysis = journalAnalysisRepository
+        .findTopByJournalIdOrderByAnalyzedAtDesc(journalId)
         .orElse(null);
 
-    if (existingReply != null) {
-      return JournalReplyResponseDto.builder()
-          .replyId(existingReply.getId())
-          .journalId(journal.getId())
-          .content(existingReply.getContent())
-          .modelName(existingReply.getModelName())
-          .createdAt(existingReply.getCreatedAt())
-          .build();
+    if (existingAnalysis != null) {
+      return mapToAnalyzeResponse(journalId, existingAnalysis);
     }
 
     String truncatedContent = truncateJournalContent(journal.getContent());
-    String aiReply = openAiReplyService.generateReply(truncatedContent);
+    JournalAiResultDto aiResult =
+        openAiJournalAiService.generateAnalysisResult(truncatedContent);
 
-    JournalReply savedReply = journalReplyRepository.save(
-        JournalReply.create(aiReply, openAiReplyService.getModel(), journal)
+    JournalAnalysis savedAnalysis = journalAnalysisRepository.save(
+        JournalAnalysis.create(
+            aiResult.summary(),
+            openAiJournalAiService.getModel(),
+            "v1",
+            journal
+        )
     );
 
-    return JournalReplyResponseDto.builder()
-        .replyId(savedReply.getId())
-        .journalId(journal.getId())
-        .content(savedReply.getContent())
-        .modelName(savedReply.getModelName())
-        .createdAt(savedReply.getCreatedAt())
+    boolean exists = journalReplyRepository
+        .findTopByJournalIdOrderByCreatedAtDesc(journalId)
+        .isPresent();
+
+    if (!exists) {
+      journalReplyRepository.save(
+          JournalReply.create(
+              aiResult.reply(),
+              openAiJournalAiService.getModel(),
+              journal
+          )
+      );
+    }
+
+    List<JournalKeyword> savedKeywords = saveKeywords(savedAnalysis, aiResult.keywords());
+
+    return mapToAnalyzeResponse(journalId, savedAnalysis, savedKeywords);
+  }
+
+  private List<JournalKeyword> saveKeywords(JournalAnalysis analysis,
+      List<JournalAiResultDto.KeywordItem> keywords) {
+    List<JournalKeyword> saved = new ArrayList<>();
+
+    for (JournalAiResultDto.KeywordItem item : keywords) {
+      Keyword keyword = keywordRepository.findByName(item.name())
+          .orElseGet(() -> keywordRepository.save(
+              Keyword.builder()
+                  .name(item.name())
+                  .build()
+          ));
+
+      JournalKeyword jk = journalKeywordRepository.save(
+          JournalKeyword.builder()
+              .score(item.score())
+              .journalAnalysis(analysis)
+              .keyword(keyword)
+              .build()
+      );
+      saved.add(jk);
+    }
+
+    return saved;
+  }
+
+  public List<JournalKeywordItemDto> getKeywords(Long userId, Long journalId) {
+
+    Journal journal = journalRepository.findByIdAndIsDeletedFalse(journalId)
+        .orElseThrow(() -> new BusinessException(ErrorStatus.JOURNAL_NOT_FOUND));
+
+    if (!journal.getUser().getId().equals(userId)) {
+      throw new BusinessException(ErrorStatus.FORBIDDEN_USER);
+    }
+
+    JournalAnalysis analysis = journalAnalysisRepository
+        .findTopByJournalIdOrderByAnalyzedAtDesc(journalId)
+        .orElseThrow(() -> new BusinessException(ErrorStatus.JOURNAL_NOT_FOUND));
+
+    return analysis.getJournalKeywords().stream()
+        .map(journalKeyword -> JournalKeywordItemDto.builder()
+            .keyword(journalKeyword.getKeyword().getName())
+            .score(journalKeyword.getScore())
+            .build())
+        .toList();
+  }
+
+  private JournalAnalyzeResponseDto mapToAnalyzeResponse(Long journalId, JournalAnalysis analysis) {
+
+    List<JournalKeywordItemDto> keywordItems = analysis.getJournalKeywords().stream()
+        .map(journalKeyword -> JournalKeywordItemDto.builder()
+            .keyword(journalKeyword.getKeyword().getName())
+            .score(journalKeyword.getScore())
+            .build())
+        .toList();
+
+    String reply = journalReplyRepository.findTopByJournalIdOrderByCreatedAtDesc(journalId)
+        .map(JournalReply::getContent)
+        .orElse(null);
+
+    return JournalAnalyzeResponseDto.builder()
+        .journalId(journalId)
+        .summary(analysis.getSummary())
+        .reply(reply)
+        .keywords(keywordItems)
+        .build();
+  }
+
+  private JournalAnalyzeResponseDto mapToAnalyzeResponse(Long journalId, JournalAnalysis analysis,
+      List<JournalKeyword> keywords) {
+
+    List<JournalKeywordItemDto> keywordItems = keywords.stream()
+        .map(jk -> JournalKeywordItemDto.builder()
+            .keyword(jk.getKeyword().getName())
+            .score(jk.getScore())
+            .build())
+        .toList();
+
+    String reply = journalReplyRepository.findTopByJournalIdOrderByCreatedAtDesc(journalId)
+        .map(JournalReply::getContent)
+        .orElse(null);
+
+    return JournalAnalyzeResponseDto.builder()
+        .journalId(journalId)
+        .summary(analysis.getSummary())
+        .reply(reply)
+        .keywords(keywordItems)
         .build();
   }
 
@@ -172,10 +266,8 @@ public class JournalService {
       throw new BusinessException(ErrorStatus.JOURNAL_CONTENT_EMPTY);
     }
 
-    if (content.length() <= MAX_REPLY_SOURCE_LENGTH) {
-      return content;
-    }
-
-    return content.substring(0, MAX_REPLY_SOURCE_LENGTH);
+    return content.length() <= MAX_REPLY_SOURCE_LENGTH
+        ? content
+        : content.substring(0, MAX_REPLY_SOURCE_LENGTH);
   }
 }
