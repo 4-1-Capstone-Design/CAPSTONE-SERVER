@@ -67,3 +67,9 @@ logging:
   level:
     root: INFO
     org.sopt: DEBUG
+
+# 10. Open Ai
+openai:
+  api-key: ${OPENAI_API_KEY}
+  url: ${OPENAI_URL}
+  model: ${OPENAI_MODEL}

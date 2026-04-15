@@ -40,6 +40,7 @@ public enum ErrorStatus {
   NOT_FOUND_HANDLER(40401, HttpStatus.NOT_FOUND, "존재하지 않는 API 경로입니다."),
   REFRESH_TOKEN_NOT_FOUND(40402, HttpStatus.NOT_FOUND, "저장된 리프레시 토큰이 없습니다."),
   JOURNAL_NOT_FOUND(40403, HttpStatus.NOT_FOUND, "해당 저널을 찾을 수 없습니다."),
+  JOURNAL_CONTENT_EMPTY(40004, HttpStatus.BAD_REQUEST, "저널 내용이 비어 있습니다."),
   /**
    * 405 Method Not Allowed
    */
