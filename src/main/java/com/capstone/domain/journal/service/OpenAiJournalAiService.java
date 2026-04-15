@@ -18,7 +18,7 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class OpenAiReplyService {
+public class OpenAiJournalAiService {
 
   @Value("${openai.api-key}")
   private String apiKey;

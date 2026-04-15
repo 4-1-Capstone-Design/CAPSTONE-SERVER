@@ -15,7 +15,6 @@ import com.capstone.domain.user.repository.UserRepository;
 import com.capstone.global.error.BusinessException;
 import com.capstone.global.error.ErrorStatus;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +32,7 @@ public class JournalService {
   private final JournalRepository journalRepository;
   private final UserRepository userRepository;
   private final JournalReplyRepository journalReplyRepository;
-  private final OpenAiReplyService openAiReplyService;
+  private final OpenAiJournalAiService openAiReplyService;
 
   @Transactional
   public JournalCreateResponseDto createJournal(Long userId, JournalCreateRequestDto request) {
