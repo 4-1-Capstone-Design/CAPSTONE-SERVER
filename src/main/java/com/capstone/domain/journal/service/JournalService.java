@@ -169,7 +169,7 @@ public class JournalService {
 
   private String truncateJournalContent(String content) {
     if (content == null || content.isBlank()) {
-      throw new BusinessException(ErrorStatus.JOURNAL_NOT_FOUND);
+      throw new BusinessException(ErrorStatus.JOURNAL_CONTENT_EMPTY);
     }
 
     if (content.length() <= MAX_REPLY_SOURCE_LENGTH) {
