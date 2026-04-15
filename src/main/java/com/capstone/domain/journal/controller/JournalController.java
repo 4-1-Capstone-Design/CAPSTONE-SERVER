@@ -2,6 +2,7 @@ package com.capstone.domain.journal.controller;
 
 import com.capstone.domain.journal.dto.request.JournalCreateRequestDto;
 import com.capstone.domain.journal.dto.response.JournalCreateResponseDto;
+import com.capstone.domain.journal.dto.response.JournalCursorResponseDto;
 import com.capstone.domain.journal.dto.response.JournalGetResponseDto;
 import com.capstone.domain.journal.service.JournalService;
 import com.capstone.global.common.ApiResponse;
@@ -11,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.time.LocalDate;
 
 @RestController
@@ -50,6 +52,22 @@ public class JournalController {
   }
 
   @GetMapping
+  public ResponseEntity<ApiResponse<JournalCursorResponseDto>> getJournalList(
+      @RequestHeader("Authorization") String bearerToken,
+      @RequestParam(required = false) Long cursor,
+      @RequestParam(defaultValue = "10") int size
+  ) {
+    String token = bearerToken.replace("Bearer ", "");
+    Long userId = jwtTokenProvider.getUserIdFromToken(token);
+
+    JournalCursorResponseDto response = journalService.getJournalList(userId, cursor, size);
+
+    return ResponseEntity.ok(
+        ApiResponse.success(SuccessStatus.OK, response)
+    );
+  }
+
+  @GetMapping("/by-date")
   public ResponseEntity<ApiResponse<JournalGetResponseDto>> getJournalByDate(
       @RequestHeader("Authorization") String bearerToken,
       @RequestParam int year,
@@ -61,8 +79,7 @@ public class JournalController {
 
     LocalDate date = LocalDate.of(year, month, day);
 
-    JournalGetResponseDto response =
-        journalService.getJournalByDate(userId, date);
+    JournalGetResponseDto response = journalService.getJournalByDate(userId, date);
 
     return ResponseEntity.ok(
         ApiResponse.success(SuccessStatus.OK, response)

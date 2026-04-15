@@ -2,7 +2,9 @@ package com.capstone.domain.journal.service;
 
 import com.capstone.domain.journal.dto.request.JournalCreateRequestDto;
 import com.capstone.domain.journal.dto.response.JournalCreateResponseDto;
+import com.capstone.domain.journal.dto.response.JournalCursorResponseDto;
 import com.capstone.domain.journal.dto.response.JournalGetResponseDto;
+import com.capstone.domain.journal.dto.response.JournalListItemResponseDto;
 import com.capstone.domain.journal.entity.Journal;
 import com.capstone.domain.journal.repository.JournalRepository;
 import com.capstone.domain.user.entity.User;
@@ -10,9 +12,12 @@ import com.capstone.domain.user.repository.UserRepository;
 import com.capstone.global.error.BusinessException;
 import com.capstone.global.error.ErrorStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -64,7 +69,6 @@ public class JournalService {
 
   @Transactional(readOnly = true)
   public JournalGetResponseDto getJournalByDate(Long userId, LocalDate date) {
-
     Journal journal = journalRepository
         .findByUserIdAndJournalDateAndIsDeletedFalse(userId, date)
         .orElseThrow(() -> new BusinessException(ErrorStatus.JOURNAL_NOT_FOUND));
@@ -75,6 +79,44 @@ public class JournalService {
         .content(journal.getContent())
         .journalDate(journal.getJournalDate())
         .createdAt(journal.getCreatedAt())
+        .build();
+  }
+
+  @Transactional(readOnly = true)
+  public JournalCursorResponseDto getJournalList(Long userId, Long cursor, int size) {
+    int pageSize = Math.max(1, Math.min(size, 50));
+
+    List<Journal> journals = journalRepository.findAllByUserIdWithCursor(
+        userId,
+        cursor,
+        PageRequest.of(0, pageSize + 1)
+    );
+
+    boolean hasNext = journals.size() > pageSize;
+
+    if (hasNext) {
+      journals = journals.subList(0, pageSize);
+    }
+
+    List<JournalListItemResponseDto> journalList = journals.stream()
+        .map(journal -> JournalListItemResponseDto.builder()
+            .journalId(journal.getId())
+            .title(journal.getTitle())
+            .content(journal.getContent())
+            .journalDate(journal.getJournalDate())
+            .createdAt(journal.getCreatedAt())
+            .build())
+        .toList();
+
+    Long nextCursor = null;
+    if (hasNext && !journals.isEmpty()) {
+      nextCursor = journals.get(journals.size() - 1).getId();
+    }
+
+    return JournalCursorResponseDto.builder()
+        .journals(journalList)
+        .nextCursor(nextCursor)
+        .hasNext(hasNext)
         .build();
   }
 }
