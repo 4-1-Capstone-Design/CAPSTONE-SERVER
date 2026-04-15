@@ -1,15 +1,17 @@
 package com.capstone.domain.journal.controller;
 
 import com.capstone.domain.journal.dto.request.JournalCreateRequestDto;
+import com.capstone.domain.journal.dto.response.JournalAnalyzeResponseDto;
 import com.capstone.domain.journal.dto.response.JournalCreateResponseDto;
 import com.capstone.domain.journal.dto.response.JournalCursorResponseDto;
 import com.capstone.domain.journal.dto.response.JournalGetResponseDto;
-import com.capstone.domain.journal.dto.response.JournalReplyResponseDto;
+import com.capstone.domain.journal.dto.response.JournalKeywordItemDto;
 import com.capstone.domain.journal.service.JournalService;
 import com.capstone.global.common.ApiResponse;
 import com.capstone.global.common.SuccessStatus;
 import com.capstone.global.security.jwt.JwtTokenProvider;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -97,6 +99,22 @@ public class JournalController {
 
     JournalAnalyzeResponseDto response =
         journalService.createJournalReply(userId, journalId);
+
+    return ResponseEntity.ok(
+        ApiResponse.success(SuccessStatus.OK, response)
+    );
+  }
+
+  @GetMapping("/{journalId}/keywords")
+  public ResponseEntity<ApiResponse<List<JournalKeywordItemDto>>> getKeywords(
+      @RequestHeader("Authorization") String bearerToken,
+      @PathVariable Long journalId
+  ) {
+    String token = bearerToken.replace("Bearer ", "");
+    Long userId = jwtTokenProvider.getUserIdFromToken(token);
+
+    List<JournalKeywordItemDto> response =
+        journalService.getKeywords(userId, journalId);
 
     return ResponseEntity.ok(
         ApiResponse.success(SuccessStatus.OK, response)
