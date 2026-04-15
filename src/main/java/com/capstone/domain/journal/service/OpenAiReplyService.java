@@ -70,7 +70,7 @@ public class OpenAiReplyService {
           restTemplate.exchange(url, HttpMethod.POST, request, Map.class);
 
       Map<String, Object> response = responseEntity.getBody();
-      log.info("OpenAI response body={}", response);
+      log.debug("OpenAI response body={}", response);
 
       String replyText = extractOutputText(response);
 
