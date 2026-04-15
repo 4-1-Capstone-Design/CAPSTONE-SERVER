@@ -84,7 +84,7 @@ public class JournalService {
 
   @Transactional(readOnly = true)
   public JournalCursorResponseDto getJournalList(Long userId, Long cursor, int size) {
-    int pageSize = Math.min(size, 50);
+    int pageSize = Math.max(1, Math.min(size, 50));
 
     List<Journal> journals = journalRepository.findAllByUserIdWithCursor(
         userId,
