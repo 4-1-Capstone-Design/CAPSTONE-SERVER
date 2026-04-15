@@ -21,13 +21,13 @@ public class Keyword {
   private Long id;
 
   @Column(name = "keyword_name", nullable = false, length = 255)
-  private String keywordName;
+  private String name;
 
   @OneToMany(mappedBy = "keyword")
   private List<JournalKeyword> journalKeywords = new ArrayList<>();
 
   @Builder
-  public Keyword(String keywordName) {
-    this.keywordName = keywordName;
+  public Keyword(String name) {
+    this.name = name;
   }
 }

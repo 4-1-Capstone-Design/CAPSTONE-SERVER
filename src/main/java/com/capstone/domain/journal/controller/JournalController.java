@@ -88,14 +88,15 @@ public class JournalController {
   }
 
   @PostMapping("/{journalId}/reply")
-  public ResponseEntity<ApiResponse<JournalReplyResponseDto>> createJournalReply(
+  public ResponseEntity<ApiResponse<JournalAnalyzeResponseDto>> createJournalReply(
       @RequestHeader("Authorization") String bearerToken,
       @PathVariable Long journalId
   ) {
     String token = bearerToken.replace("Bearer ", "");
     Long userId = jwtTokenProvider.getUserIdFromToken(token);
 
-    JournalReplyResponseDto response = journalService.createJournalReply(userId, journalId);
+    JournalAnalyzeResponseDto response =
+        journalService.createJournalReply(userId, journalId);
 
     return ResponseEntity.ok(
         ApiResponse.success(SuccessStatus.OK, response)

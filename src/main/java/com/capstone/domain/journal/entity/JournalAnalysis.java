@@ -39,9 +39,6 @@ public class JournalAnalysis {
   @OneToMany(mappedBy = "journalAnalysis")
   private List<JournalKeyword> journalKeywords = new ArrayList<>();
 
-  @OneToMany(mappedBy = "journalAnalysis")
-  private List<JournalEmotion> journalEmotions = new ArrayList<>();
-
   @Builder
   public JournalAnalysis(String summary, String modelName, String version,
       LocalDateTime analyzedAt, Journal journal) {
@@ -50,5 +47,14 @@ public class JournalAnalysis {
     this.version = version;
     this.analyzedAt = analyzedAt;
     this.journal = journal;
+  }
+  public static JournalAnalysis create(String summary, String modelName, String version, Journal journal) {
+    return JournalAnalysis.builder()
+        .summary(summary)
+        .modelName(modelName)
+        .version(version)
+        .analyzedAt(LocalDateTime.now())
+        .journal(journal)
+        .build();
   }
 }
