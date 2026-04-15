@@ -4,6 +4,7 @@ import com.capstone.domain.journal.dto.request.JournalCreateRequestDto;
 import com.capstone.domain.journal.dto.response.JournalCreateResponseDto;
 import com.capstone.domain.journal.dto.response.JournalCursorResponseDto;
 import com.capstone.domain.journal.dto.response.JournalGetResponseDto;
+import com.capstone.domain.journal.dto.response.JournalReplyResponseDto;
 import com.capstone.domain.journal.service.JournalService;
 import com.capstone.global.common.ApiResponse;
 import com.capstone.global.common.SuccessStatus;
@@ -80,6 +81,21 @@ public class JournalController {
     LocalDate date = LocalDate.of(year, month, day);
 
     JournalGetResponseDto response = journalService.getJournalByDate(userId, date);
+
+    return ResponseEntity.ok(
+        ApiResponse.success(SuccessStatus.OK, response)
+    );
+  }
+
+  @PostMapping("/{journalId}/reply")
+  public ResponseEntity<ApiResponse<JournalReplyResponseDto>> createJournalReply(
+      @RequestHeader("Authorization") String bearerToken,
+      @PathVariable Long journalId
+  ) {
+    String token = bearerToken.replace("Bearer ", "");
+    Long userId = jwtTokenProvider.getUserIdFromToken(token);
+
+    JournalReplyResponseDto response = journalService.createJournalReply(userId, journalId);
 
     return ResponseEntity.ok(
         ApiResponse.success(SuccessStatus.OK, response)
