@@ -77,4 +77,12 @@ public class User {
   public void updateUpdatedAt() {
     this.updatedAt = LocalDateTime.now();
   }
+
+  public void addClover(Long amount) {
+    if (amount == null || amount <= 0) {
+      throw new IllegalArgumentException("amount must be positive");
+    }
+    this.cloverBalance += amount;
+    this.updatedAt = LocalDateTime.now();
+  }
 }
