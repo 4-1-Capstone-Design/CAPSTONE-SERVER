@@ -36,7 +36,7 @@ public class JournalService {
 
   @Transactional
   public JournalCreateResponseDto createJournal(Long userId, JournalCreateRequestDto request) {
-    User user = userRepository.findById(userId)
+    User user = userRepository.findByIdForUpdate(userId)
         .orElseThrow(() -> new BusinessException(ErrorStatus.USER_NOT_FOUND));
 
     if (journalRepository.existsByUserIdAndJournalDateAndIsDeletedFalse(userId, request.journalDate())) {
