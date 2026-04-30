@@ -12,6 +12,7 @@ import com.capstone.domain.user.repository.UserRepository;
 import com.capstone.global.error.BusinessException;
 import com.capstone.global.error.ErrorStatus;
 import com.capstone.global.security.jwt.JwtTokenProvider;
+import com.vane.badwordfiltering.BadWordFiltering;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -28,6 +29,7 @@ public class AuthService {
   private final RefreshTokenRepository refreshTokenRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtTokenProvider jwtTokenProvider;
+  private final BadWordFiltering badWordFiltering = new BadWordFiltering();
 
   @Value("${jwt.refresh-token-validity}")
   private long refreshTokenValidity; // ms 단위라고 가정
@@ -36,6 +38,7 @@ public class AuthService {
   public SignUpResponseDto signUp(SignUpRequestDto request) {
     validateDuplicateEmail(request.email());
     validateDuplicateNickname(request.nickname());
+    validateNicknameBadWord(request.nickname());
 
     User user = User.create(
         request.email(),
@@ -61,6 +64,12 @@ public class AuthService {
         .email(savedUser.getEmail())
         .nickname(savedUser.getNickname())
         .build();
+  }
+
+  private void validateNicknameBadWord(String nickname) {
+    if (badWordFiltering.check(nickname) || badWordFiltering.blankCheck(nickname)) {
+      throw new BusinessException(ErrorStatus.NICKNAME_CONTAINS_BAD_WORD);
+    }
   }
 
   @Transactional
