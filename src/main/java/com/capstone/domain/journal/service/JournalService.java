@@ -52,6 +52,8 @@ public class JournalService {
 
     Journal savedJournal = journalRepository.save(journal);
 
+    giveCloverIfConsecutive(user, request.journalDate());
+
     return JournalCreateResponseDto.builder()
         .journalId(savedJournal.getId())
         .title(savedJournal.getTitle())
@@ -269,5 +271,21 @@ public class JournalService {
     return content.length() <= MAX_REPLY_SOURCE_LENGTH
         ? content
         : content.substring(0, MAX_REPLY_SOURCE_LENGTH);
+  }
+
+  private void giveCloverIfConsecutive(User user, LocalDate journalDate) {
+    LocalDate yesterday = journalDate.minusDays(1);
+
+    boolean wroteYesterday =
+        journalRepository.existsByUserIdAndJournalDateAndIsDeletedFalse(
+            user.getId(),
+            yesterday
+        );
+
+    if (!wroteYesterday) {
+      return;
+    }
+
+    user.addClover(1L);
   }
 }

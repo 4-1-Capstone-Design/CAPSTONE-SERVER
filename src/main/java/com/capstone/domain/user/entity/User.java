@@ -77,4 +77,9 @@ public class User {
   public void updateUpdatedAt() {
     this.updatedAt = LocalDateTime.now();
   }
+
+  public void addClover(Long amount) {
+    this.cloverBalance += amount;
+    this.updatedAt = LocalDateTime.now();
+  }
 }
