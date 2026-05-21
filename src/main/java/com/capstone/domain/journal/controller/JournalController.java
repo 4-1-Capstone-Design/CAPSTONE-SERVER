@@ -1,8 +1,6 @@
 package com.capstone.domain.journal.controller;
 
-import com.capstone.domain.journal.dto.request.JournalCreateRequestDto;
 import com.capstone.domain.journal.dto.response.JournalAnalyzeResponseDto;
-import com.capstone.domain.journal.dto.response.JournalCreateResponseDto;
 import com.capstone.domain.journal.dto.response.JournalCursorResponseDto;
 import com.capstone.domain.journal.dto.response.JournalGetResponseDto;
 import com.capstone.domain.journal.dto.response.JournalKeywordItemDto;
@@ -12,7 +10,6 @@ import com.capstone.global.common.SuccessStatus;
 import com.capstone.global.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -28,18 +25,6 @@ import java.time.LocalDate;
 public class JournalController {
 
   private final JournalService journalService;
-
-  @Operation(summary = "모닝저널 작성")
-  @PostMapping
-  public ResponseEntity<ApiResponse<JournalCreateResponseDto>> createJournal(
-      @AuthenticationPrincipal UserPrincipal userPrincipal,
-      @Valid @RequestBody JournalCreateRequestDto request
-  ) {
-    JournalCreateResponseDto response = journalService.createJournal(userPrincipal.getUserId(), request);
-
-    return ResponseEntity.status(SuccessStatus.CREATED.getHttpStatus())
-        .body(ApiResponse.created(SuccessStatus.CREATED, response));
-  }
 
   @Operation(summary = "모닝저널 삭제")
   @DeleteMapping("/{journalId}")
