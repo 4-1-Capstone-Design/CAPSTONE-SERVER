@@ -5,8 +5,7 @@ import java.util.List;
 
 public record JournalAiResultDto(
     String reply,
-    String summary,
-    List<KeywordItem> keywords
+    String summary
 ) {
   public record KeywordItem(
       String name,
