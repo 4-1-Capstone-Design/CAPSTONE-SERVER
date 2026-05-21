@@ -8,11 +8,14 @@ import com.capstone.domain.auth.dto.response.SignUpResponseDto;
 import com.capstone.domain.auth.service.AuthService;
 import com.capstone.global.common.ApiResponse;
 import com.capstone.global.common.SuccessStatus;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Auth", description = "인증 관련 API")
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -20,6 +23,7 @@ public class AuthController {
 
   private final AuthService authService;
 
+  @Operation(summary = "회원가입")
   @PostMapping("/signup")
   public ResponseEntity<ApiResponse<SignUpResponseDto>> signUp(
       @Valid @RequestBody SignUpRequestDto request
@@ -29,6 +33,7 @@ public class AuthController {
         .body(ApiResponse.created(SuccessStatus.CREATED, response));
   }
 
+  @Operation(summary = "로그인")
   @PostMapping("/login")
   public ResponseEntity<ApiResponse<LoginResponseDto>> login(
       @Valid @RequestBody LoginRequestDto request
@@ -37,6 +42,7 @@ public class AuthController {
     return ResponseEntity.ok(ApiResponse.success(SuccessStatus.OK, response));
   }
 
+  @Operation(summary = "로그아웃")
   @PostMapping("/logout")
   public ResponseEntity<ApiResponse<Void>> logout(
       @Valid @RequestBody LogoutRequestDto request
