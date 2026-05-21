@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path C:\\\\capstone\\\\src\\\\main\\\\java\\\\com\\\\capstone\\\\domain -Directory | ForEach-Object { $_.Name })"
+    ]
+  }
+}
