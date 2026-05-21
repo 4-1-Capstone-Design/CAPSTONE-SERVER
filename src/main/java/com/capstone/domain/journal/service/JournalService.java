@@ -6,6 +6,8 @@ import com.capstone.domain.journal.entity.*;
 import com.capstone.domain.journal.repository.*;
 import com.capstone.domain.keyword.entity.Keyword;
 import com.capstone.domain.keyword.repository.KeywordRepository;
+import com.capstone.domain.question.entity.DailyQuestion;
+import com.capstone.domain.question.repository.DailyQuestionRepository;
 import com.capstone.domain.user.entity.User;
 import com.capstone.domain.user.repository.UserRepository;
 import com.capstone.global.error.BusinessException;
@@ -33,8 +35,8 @@ public class JournalService {
   private final JournalKeywordRepository journalKeywordRepository;
   private final KeywordRepository keywordRepository;
   private final OpenAiJournalAiService openAiJournalAiService;
-
   private final EmotionAnalysisService emotionAnalysisService;
+  private final DailyQuestionRepository dailyQuestionRepository;
 
   @Transactional
   public JournalCreateResponseDto createJournal(Long userId, JournalCreateRequestDto request) {
@@ -83,12 +85,25 @@ public class JournalService {
         .findByUserIdAndJournalDateAndIsDeletedFalse(userId, date)
         .orElseThrow(() -> new BusinessException(ErrorStatus.JOURNAL_NOT_FOUND));
 
+    List<DailyQuestion> dailyQuestions =
+        dailyQuestionRepository.findAllByUserIdAndQuestionDateOrderByDisplayOrder(userId, date);
+
+    List<JournalGetResponseDto.QAItemDto> questions = dailyQuestions.stream()
+        .filter(dq -> dq.getAnswer() != null)
+        .map(dq -> new JournalGetResponseDto.QAItemDto(
+            dq.getDisplayOrder(),
+            dq.getQuestion().getContent(),
+            dq.getAnswer().getContent()
+        ))
+        .toList();
+
     return JournalGetResponseDto.builder()
         .journalId(journal.getId())
         .title(journal.getTitle())
         .content(journal.getContent())
         .journalDate(journal.getJournalDate())
         .createdAt(journal.getCreatedAt())
+        .questions(questions)
         .build();
   }
 
