@@ -73,3 +73,8 @@ openai:
   api-key: ${OPENAI_API_KEY}
   url: ${OPENAI_URL}
   model: ${OPENAI_MODEL}
+
+# 11. Python Model
+emotion:
+  api:
+    url: http://127.0.0.1:8000/predict

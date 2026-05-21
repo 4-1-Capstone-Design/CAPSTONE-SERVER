@@ -27,4 +27,17 @@ public interface JournalRepository extends JpaRepository<Journal, Long> {
       @Param("cursor") Long cursor,
       Pageable pageable
   );
+
+  @Query("""
+      select count(j) from Journal j
+      where j.user.id = :userId
+        and j.isDeleted = false
+        and year(j.journalDate) = :year
+        and month(j.journalDate) = :month
+      """)
+  long countByUserIdAndMonth(
+      @Param("userId") Long userId,
+      @Param("year") int year,
+      @Param("month") int month
+  );
 }
