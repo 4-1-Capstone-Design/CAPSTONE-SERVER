@@ -75,7 +75,7 @@ jib {
         image = 'eclipse-temurin:21-jre'
     }
     to {
-        image = "${System.getenv('DOCKER_USERNAME') ?: 'local'}/capstone-server"
+        image = "${(System.getenv('DOCKER_USERNAME') ?: 'local').toLowerCase()}/capstone-server"
         tags = ['latest']
         auth {
             username = System.getenv('DOCKER_USERNAME')
