@@ -7,10 +7,8 @@ import com.capstone.domain.journal.service.EmotionAnalysisService;
 import com.capstone.domain.journal.service.JournalService;
 import com.capstone.domain.keyword.entity.Keyword;
 import com.capstone.domain.keyword.repository.KeywordRepository;
-import com.capstone.domain.question.dto.request.QuestionAnswerRequestDto;
 import com.capstone.domain.question.dto.request.QuestionJournalSubmitRequestDto;
 import com.capstone.domain.question.dto.response.DailyQuestionItemDto;
-import com.capstone.domain.question.dto.response.QuestionAnswerResponseDto;
 import com.capstone.domain.question.dto.response.QuestionJournalSubmitResponseDto;
 import com.capstone.domain.question.dto.response.TodayQuestionsResponseDto;
 import com.capstone.domain.question.entity.*;
@@ -85,36 +83,6 @@ public class QuestionService {
             }
             throw e;
         }
-    }
-
-    @Transactional
-    public QuestionAnswerResponseDto submitAnswer(Long userId, Long dailyQuestionId,
-                                                  QuestionAnswerRequestDto request) {
-        DailyQuestion dailyQuestion = dailyQuestionRepository.findByIdAndUserId(dailyQuestionId, userId)
-                .orElseThrow(() -> new BusinessException(ErrorStatus.DAILY_QUESTION_NOT_FOUND));
-
-        if (questionAnswerRepository.existsByDailyQuestionId(dailyQuestionId)) {
-            throw new BusinessException(ErrorStatus.QUESTION_ALREADY_ANSWERED);
-        }
-
-        QuestionAnswer answer;
-        try {
-            answer = questionAnswerRepository.save(
-                    QuestionAnswer.create(dailyQuestion, request.content())
-            );
-        } catch (DataIntegrityViolationException e) {
-            throw new BusinessException(ErrorStatus.QUESTION_ALREADY_ANSWERED);
-        }
-
-        List<String> keywordNames = extractAndSaveKeywords(answer, request.content());
-
-        return new QuestionAnswerResponseDto(
-                answer.getId(),
-                dailyQuestionId,
-                answer.getContent(),
-                answer.getCreatedAt(),
-                keywordNames
-        );
     }
 
     @Transactional

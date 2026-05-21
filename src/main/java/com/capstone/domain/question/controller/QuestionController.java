@@ -1,8 +1,6 @@
 package com.capstone.domain.question.controller;
 
-import com.capstone.domain.question.dto.request.QuestionAnswerRequestDto;
 import com.capstone.domain.question.dto.request.QuestionJournalSubmitRequestDto;
-import com.capstone.domain.question.dto.response.QuestionAnswerResponseDto;
 import com.capstone.domain.question.dto.response.QuestionJournalSubmitResponseDto;
 import com.capstone.domain.question.dto.response.TodayQuestionsResponseDto;
 import com.capstone.domain.question.service.QuestionService;
@@ -19,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Question", description = "오늘의 질문 관련 API")
 @RestController
-@RequestMapping({"/api/v1/questions", "/api/v1/journals/questions"})
+@RequestMapping("/api/v1/journals/questions")
 @RequiredArgsConstructor
 public class QuestionController {
 
@@ -32,18 +30,6 @@ public class QuestionController {
     ) {
         TodayQuestionsResponseDto response = questionService.getTodayQuestions(userPrincipal.getUserId());
         return ResponseEntity.ok(ApiResponse.success(SuccessStatus.OK, response));
-    }
-
-    @Operation(summary = "질문 답변 제출")
-    @PostMapping("/{dailyQuestionId}/answers")
-    public ResponseEntity<ApiResponse<QuestionAnswerResponseDto>> submitAnswer(
-            @AuthenticationPrincipal UserPrincipal userPrincipal,
-            @PathVariable Long dailyQuestionId,
-            @Valid @RequestBody QuestionAnswerRequestDto request
-    ) {
-        QuestionAnswerResponseDto response = questionService.submitAnswer(userPrincipal.getUserId(), dailyQuestionId, request);
-        return ResponseEntity.status(SuccessStatus.CREATED.getHttpStatus())
-                .body(ApiResponse.created(SuccessStatus.CREATED, response));
     }
 
     @Operation(summary = "오늘의 질문 전체 답변 제출 및 저널 생성")
