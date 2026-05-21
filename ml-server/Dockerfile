@@ -8,7 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt \
 
 COPY main.py .
 
-# 이미지 빌드 시 모델 미리 다운로드 (컨테이너 시작 빠르게)
+# 이미지 빌드 시 모델 미리 다운로드
 RUN python -c "\
 from transformers import AutoTokenizer, AutoModelForSequenceClassification; \
 AutoTokenizer.from_pretrained('hun3359/klue-bert-base-sentiment'); \
