@@ -9,11 +9,12 @@ import com.capstone.domain.journal.dto.response.JournalKeywordItemDto;
 import com.capstone.domain.journal.service.JournalService;
 import com.capstone.global.common.ApiResponse;
 import com.capstone.global.common.SuccessStatus;
-import com.capstone.global.security.jwt.JwtTokenProvider;
+import com.capstone.global.security.UserPrincipal;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -24,17 +25,13 @@ import java.time.LocalDate;
 public class JournalController {
 
   private final JournalService journalService;
-  private final JwtTokenProvider jwtTokenProvider;
 
   @PostMapping
   public ResponseEntity<ApiResponse<JournalCreateResponseDto>> createJournal(
-      @RequestHeader("Authorization") String bearerToken,
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
       @Valid @RequestBody JournalCreateRequestDto request
   ) {
-    String token = bearerToken.replace("Bearer ", "");
-    Long userId = jwtTokenProvider.getUserIdFromToken(token);
-
-    JournalCreateResponseDto response = journalService.createJournal(userId, request);
+    JournalCreateResponseDto response = journalService.createJournal(userPrincipal.getUserId(), request);
 
     return ResponseEntity.status(SuccessStatus.CREATED.getHttpStatus())
         .body(ApiResponse.created(SuccessStatus.CREATED, response));
@@ -42,13 +39,10 @@ public class JournalController {
 
   @DeleteMapping("/{journalId}")
   public ResponseEntity<ApiResponse<Void>> deleteJournal(
-      @RequestHeader("Authorization") String bearerToken,
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
       @PathVariable Long journalId
   ) {
-    String token = bearerToken.replace("Bearer ", "");
-    Long userId = jwtTokenProvider.getUserIdFromToken(token);
-
-    journalService.deleteJournal(userId, journalId);
+    journalService.deleteJournal(userPrincipal.getUserId(), journalId);
 
     return ResponseEntity.status(SuccessStatus.OK.getHttpStatus())
         .body(ApiResponse.success(SuccessStatus.OK));
@@ -56,14 +50,11 @@ public class JournalController {
 
   @GetMapping
   public ResponseEntity<ApiResponse<JournalCursorResponseDto>> getJournalList(
-      @RequestHeader("Authorization") String bearerToken,
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
       @RequestParam(required = false) Long cursor,
       @RequestParam(defaultValue = "10") int size
   ) {
-    String token = bearerToken.replace("Bearer ", "");
-    Long userId = jwtTokenProvider.getUserIdFromToken(token);
-
-    JournalCursorResponseDto response = journalService.getJournalList(userId, cursor, size);
+    JournalCursorResponseDto response = journalService.getJournalList(userPrincipal.getUserId(), cursor, size);
 
     return ResponseEntity.ok(
         ApiResponse.success(SuccessStatus.OK, response)
@@ -72,17 +63,14 @@ public class JournalController {
 
   @GetMapping("/by-date")
   public ResponseEntity<ApiResponse<JournalGetResponseDto>> getJournalByDate(
-      @RequestHeader("Authorization") String bearerToken,
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
       @RequestParam int year,
       @RequestParam int month,
       @RequestParam int day
   ) {
-    String token = bearerToken.replace("Bearer ", "");
-    Long userId = jwtTokenProvider.getUserIdFromToken(token);
-
     LocalDate date = LocalDate.of(year, month, day);
 
-    JournalGetResponseDto response = journalService.getJournalByDate(userId, date);
+    JournalGetResponseDto response = journalService.getJournalByDate(userPrincipal.getUserId(), date);
 
     return ResponseEntity.ok(
         ApiResponse.success(SuccessStatus.OK, response)
@@ -91,14 +79,11 @@ public class JournalController {
 
   @PostMapping("/{journalId}/reply")
   public ResponseEntity<ApiResponse<JournalAnalyzeResponseDto>> createJournalReply(
-      @RequestHeader("Authorization") String bearerToken,
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
       @PathVariable Long journalId
   ) {
-    String token = bearerToken.replace("Bearer ", "");
-    Long userId = jwtTokenProvider.getUserIdFromToken(token);
-
     JournalAnalyzeResponseDto response =
-        journalService.createJournalReply(userId, journalId);
+        journalService.createJournalReply(userPrincipal.getUserId(), journalId);
 
     return ResponseEntity.ok(
         ApiResponse.success(SuccessStatus.OK, response)
@@ -107,14 +92,11 @@ public class JournalController {
 
   @GetMapping("/{journalId}/keywords")
   public ResponseEntity<ApiResponse<List<JournalKeywordItemDto>>> getKeywords(
-      @RequestHeader("Authorization") String bearerToken,
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
       @PathVariable Long journalId
   ) {
-    String token = bearerToken.replace("Bearer ", "");
-    Long userId = jwtTokenProvider.getUserIdFromToken(token);
-
     List<JournalKeywordItemDto> response =
-        journalService.getKeywords(userId, journalId);
+        journalService.getKeywords(userPrincipal.getUserId(), journalId);
 
     return ResponseEntity.ok(
         ApiResponse.success(SuccessStatus.OK, response)
