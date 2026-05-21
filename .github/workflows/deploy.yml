@@ -1,0 +1,47 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [ develop ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      # Spring Boot 이미지 빌드 & Docker Hub push (Jib)
+      - name: Build & Push Spring Boot image
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: ./gradlew jib --image=${{ secrets.DOCKER_USERNAME }}/capstone-server:latest
+
+      # ML Server 이미지 빌드 & Docker Hub push
+      - name: Build & Push ML Server image
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/capstone-ml:latest ./ml-server
+          docker push ${{ secrets.DOCKER_USERNAME }}/capstone-ml:latest
+
+      # EC2에 SSH 접속해서 재배포
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd ~/app
+            echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" > .env.compose
+            docker compose pull
+            docker compose up -d
+            docker image prune -f
