@@ -1,12 +1,17 @@
 package com.capstone.domain.question.service;
 
+import com.capstone.domain.journal.dto.request.JournalCreateRequestDto;
+import com.capstone.domain.journal.dto.response.JournalCreateResponseDto;
 import com.capstone.domain.journal.dto.response.JournalKeywordItemDto;
 import com.capstone.domain.journal.service.EmotionAnalysisService;
+import com.capstone.domain.journal.service.JournalService;
 import com.capstone.domain.keyword.entity.Keyword;
 import com.capstone.domain.keyword.repository.KeywordRepository;
 import com.capstone.domain.question.dto.request.QuestionAnswerRequestDto;
+import com.capstone.domain.question.dto.request.QuestionJournalSubmitRequestDto;
 import com.capstone.domain.question.dto.response.DailyQuestionItemDto;
 import com.capstone.domain.question.dto.response.QuestionAnswerResponseDto;
+import com.capstone.domain.question.dto.response.QuestionJournalSubmitResponseDto;
 import com.capstone.domain.question.dto.response.TodayQuestionsResponseDto;
 import com.capstone.domain.question.entity.*;
 import com.capstone.domain.question.repository.*;
@@ -42,6 +47,7 @@ public class QuestionService {
     private final UserRepository userRepository;
     private final KeywordRepository keywordRepository;
     private final EmotionAnalysisService emotionAnalysisService;
+    private final JournalService journalService;
 
     @Transactional
     public TodayQuestionsResponseDto getTodayQuestions(Long userId) {
@@ -109,6 +115,64 @@ public class QuestionService {
                 answer.getCreatedAt(),
                 keywordNames
         );
+    }
+
+    @Transactional
+    public QuestionJournalSubmitResponseDto submitAllAnswers(Long userId,
+                                                             QuestionJournalSubmitRequestDto request) {
+        LocalDate today = LocalDate.now();
+
+        for (QuestionJournalSubmitRequestDto.AnswerItemDto item : request.answers()) {
+            DailyQuestion dailyQuestion = dailyQuestionRepository
+                    .findByIdAndUserId(item.dailyQuestionId(), userId)
+                    .orElseThrow(() -> new BusinessException(ErrorStatus.DAILY_QUESTION_NOT_FOUND));
+
+            if (questionAnswerRepository.existsByDailyQuestionId(item.dailyQuestionId())) {
+                throw new BusinessException(ErrorStatus.QUESTION_ALREADY_ANSWERED);
+            }
+
+            QuestionAnswer answer;
+            try {
+                answer = questionAnswerRepository.save(
+                        QuestionAnswer.create(dailyQuestion, item.content())
+                );
+            } catch (DataIntegrityViolationException e) {
+                throw new BusinessException(ErrorStatus.QUESTION_ALREADY_ANSWERED);
+            }
+
+            extractAndSaveKeywords(answer, item.content());
+        }
+
+        String journalContent = buildJournalContent(userId, today, request.answers());
+
+        JournalCreateResponseDto journalResponse = journalService.createJournal(
+                userId,
+                new JournalCreateRequestDto(request.title(), journalContent, today)
+        );
+
+        return new QuestionJournalSubmitResponseDto(
+                journalResponse.journalId(),
+                journalResponse.title(),
+                journalResponse.journalDate()
+        );
+    }
+
+    private String buildJournalContent(Long userId, LocalDate date,
+                                       List<QuestionJournalSubmitRequestDto.AnswerItemDto> answers) {
+        List<DailyQuestion> dailyQuestions = dailyQuestionRepository
+                .findAllByUserIdAndQuestionDateOrderByDisplayOrder(userId, date);
+
+        Map<Long, String> questionTextById = dailyQuestions.stream()
+                .collect(Collectors.toMap(DailyQuestion::getId, dq -> dq.getQuestion().getContent()));
+
+        StringBuilder sb = new StringBuilder();
+        for (QuestionJournalSubmitRequestDto.AnswerItemDto item : answers) {
+            String questionText = questionTextById.getOrDefault(item.dailyQuestionId(), "");
+            if (!sb.isEmpty()) sb.append("\n\n");
+            sb.append("Q. ").append(questionText).append("\n");
+            sb.append(item.content());
+        }
+        return sb.toString();
     }
 
     // ── 질문 선택 로직 ──────────────────────────────────────────────

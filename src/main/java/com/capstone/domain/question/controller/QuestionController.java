@@ -1,7 +1,9 @@
 package com.capstone.domain.question.controller;
 
 import com.capstone.domain.question.dto.request.QuestionAnswerRequestDto;
+import com.capstone.domain.question.dto.request.QuestionJournalSubmitRequestDto;
 import com.capstone.domain.question.dto.response.QuestionAnswerResponseDto;
+import com.capstone.domain.question.dto.response.QuestionJournalSubmitResponseDto;
 import com.capstone.domain.question.dto.response.TodayQuestionsResponseDto;
 import com.capstone.domain.question.service.QuestionService;
 import com.capstone.global.common.ApiResponse;
@@ -40,6 +42,18 @@ public class QuestionController {
             @Valid @RequestBody QuestionAnswerRequestDto request
     ) {
         QuestionAnswerResponseDto response = questionService.submitAnswer(userPrincipal.getUserId(), dailyQuestionId, request);
+        return ResponseEntity.status(SuccessStatus.CREATED.getHttpStatus())
+                .body(ApiResponse.created(SuccessStatus.CREATED, response));
+    }
+
+    @Operation(summary = "오늘의 질문 전체 답변 제출 및 저널 생성")
+    @PostMapping("/submit")
+    public ResponseEntity<ApiResponse<QuestionJournalSubmitResponseDto>> submitAllAnswers(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @Valid @RequestBody QuestionJournalSubmitRequestDto request
+    ) {
+        QuestionJournalSubmitResponseDto response =
+                questionService.submitAllAnswers(userPrincipal.getUserId(), request);
         return ResponseEntity.status(SuccessStatus.CREATED.getHttpStatus())
                 .body(ApiResponse.created(SuccessStatus.CREATED, response));
     }
