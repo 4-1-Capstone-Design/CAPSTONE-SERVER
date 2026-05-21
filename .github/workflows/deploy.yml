@@ -41,7 +41,7 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           script: |
             cd ~/app
-            echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" > .env.compose
-            docker compose pull
-            docker compose up -d
+            export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            /usr/local/bin/docker-compose pull
+            /usr/local/bin/docker-compose up -d
             docker image prune -f
