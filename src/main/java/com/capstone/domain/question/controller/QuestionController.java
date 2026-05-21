@@ -14,7 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/questions")
+@RequestMapping({"/api/v1/questions", "/api/v1/journals/questions"})
 @RequiredArgsConstructor
 public class QuestionController {
 

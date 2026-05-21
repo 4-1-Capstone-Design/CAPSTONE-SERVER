@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 
@@ -18,7 +18,7 @@ model.eval()
 label_map = model.config.id2label
 
 class Request(BaseModel):
-    text: str
+    text: str = Field(min_length=1, max_length=1000)
 
 @app.post("/predict")
 def predict(req: Request):

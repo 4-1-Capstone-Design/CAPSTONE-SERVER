@@ -15,6 +15,7 @@ import com.capstone.domain.user.repository.UserRepository;
 import com.capstone.global.error.BusinessException;
 import com.capstone.global.error.ErrorStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,14 +59,26 @@ public class QuestionService {
 
         List<Question> selected = selectQuestionsForUser(userId, today);
 
-        List<DailyQuestion> created = new ArrayList<>();
-        for (int i = 0; i < selected.size(); i++) {
-            created.add(dailyQuestionRepository.save(
-                    DailyQuestion.create(user, selected.get(i), today, i + 1)
-            ));
+        if (selected.size() < DAILY_QUESTION_COUNT) {
+            throw new BusinessException(ErrorStatus.INTERNAL_SERVER_ERROR);
         }
 
-        return toResponse(today, created);
+        try {
+            List<DailyQuestion> created = new ArrayList<>();
+            for (int i = 0; i < selected.size(); i++) {
+                created.add(dailyQuestionRepository.save(
+                        DailyQuestion.create(user, selected.get(i), today, i + 1)
+                ));
+            }
+            return toResponse(today, created);
+        } catch (DataIntegrityViolationException e) {
+            List<DailyQuestion> reloaded =
+                    dailyQuestionRepository.findAllByUserIdAndQuestionDateOrderByDisplayOrder(userId, today);
+            if (!reloaded.isEmpty()) {
+                return toResponse(today, reloaded);
+            }
+            throw e;
+        }
     }
 
     @Transactional
@@ -78,9 +91,14 @@ public class QuestionService {
             throw new BusinessException(ErrorStatus.QUESTION_ALREADY_ANSWERED);
         }
 
-        QuestionAnswer answer = questionAnswerRepository.save(
-                QuestionAnswer.create(dailyQuestion, request.content())
-        );
+        QuestionAnswer answer;
+        try {
+            answer = questionAnswerRepository.save(
+                    QuestionAnswer.create(dailyQuestion, request.content())
+            );
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(ErrorStatus.QUESTION_ALREADY_ANSWERED);
+        }
 
         List<String> keywordNames = extractAndSaveKeywords(answer, request.content());
 
@@ -172,31 +190,31 @@ public class QuestionService {
     // ── 키워드 추출 및 저장 (JournalService 패턴 동일) ────────────────
 
     private List<String> extractAndSaveKeywords(QuestionAnswer savedAnswer, String content) {
+        List<JournalKeywordItemDto> emotions;
         try {
-            List<JournalKeywordItemDto> emotions = emotionAnalysisService.analyzeEmotion(content);
-            List<String> names = new ArrayList<>();
-
-            for (JournalKeywordItemDto item : emotions) {
-                Keyword keyword = keywordRepository.findByName(item.keyword())
-                        .orElseGet(() -> keywordRepository.save(
-                                Keyword.builder().name(item.keyword()).build()
-                        ));
-
-                questionAnswerKeywordRepository.save(
-                        QuestionAnswerKeyword.builder()
-                                .questionAnswer(savedAnswer)
-                                .keyword(keyword)
-                                .score(item.score())
-                                .build()
-                );
-                names.add(item.keyword());
-            }
-            return names;
-
+            emotions = emotionAnalysisService.analyzeEmotion(content);
         } catch (Exception e) {
             log.warn("키워드 추출 실패 (answerId={}): {}", savedAnswer.getId(), e.getMessage());
             return List.of();
         }
+
+        List<String> names = new ArrayList<>();
+        for (JournalKeywordItemDto item : emotions) {
+            Keyword keyword = keywordRepository.findByName(item.keyword())
+                    .orElseGet(() -> keywordRepository.save(
+                            Keyword.builder().name(item.keyword()).build()
+                    ));
+
+            questionAnswerKeywordRepository.save(
+                    QuestionAnswerKeyword.builder()
+                            .questionAnswer(savedAnswer)
+                            .keyword(keyword)
+                            .score(item.score())
+                            .build()
+            );
+            names.add(item.keyword());
+        }
+        return names;
     }
 
     // ── 응답 매핑 ──────────────────────────────────────────────────
