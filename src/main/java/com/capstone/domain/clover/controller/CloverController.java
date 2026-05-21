@@ -4,9 +4,10 @@ import com.capstone.domain.clover.dto.response.CloverBalanceResponseDto;
 import com.capstone.domain.clover.service.CloverService;
 import com.capstone.global.common.ApiResponse;
 import com.capstone.global.common.SuccessStatus;
-import com.capstone.global.security.jwt.JwtTokenProvider;
+import com.capstone.global.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,16 +16,12 @@ import org.springframework.web.bind.annotation.*;
 public class CloverController {
 
   private final CloverService cloverService;
-  private final JwtTokenProvider jwtTokenProvider;
 
   @GetMapping
   public ResponseEntity<ApiResponse<CloverBalanceResponseDto>> getCloverBalance(
-      @RequestHeader("Authorization") String bearerToken
+      @AuthenticationPrincipal UserPrincipal userPrincipal
   ) {
-    String token = bearerToken.replace("Bearer ", "");
-    Long userId = jwtTokenProvider.getUserIdFromToken(token);
-
-    CloverBalanceResponseDto response = cloverService.getCloverBalance(userId);
+    CloverBalanceResponseDto response = cloverService.getCloverBalance(userPrincipal.getUserId());
 
     return ResponseEntity.ok(
         ApiResponse.success(SuccessStatus.OK, response)

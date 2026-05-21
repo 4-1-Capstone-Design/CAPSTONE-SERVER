@@ -34,6 +34,8 @@ public class JournalService {
   private final KeywordRepository keywordRepository;
   private final OpenAiJournalAiService openAiJournalAiService;
 
+  private final EmotionAnalysisService emotionAnalysisService;
+
   @Transactional
   public JournalCreateResponseDto createJournal(Long userId, JournalCreateRequestDto request) {
     User user = userRepository.findByIdForUpdate(userId)
@@ -143,6 +145,7 @@ public class JournalService {
     }
 
     String truncatedContent = truncateJournalContent(journal.getContent());
+
     JournalAiResultDto aiResult =
         openAiJournalAiService.generateAnalysisResult(truncatedContent);
 
@@ -155,6 +158,7 @@ public class JournalService {
         )
     );
 
+    // ✅ Reply 저장
     boolean exists = journalReplyRepository
         .findTopByJournalIdOrderByCreatedAtDesc(journalId)
         .isPresent();
@@ -169,34 +173,30 @@ public class JournalService {
       );
     }
 
-    List<JournalKeyword> savedKeywords = saveKeywords(savedAnalysis, aiResult.keywords());
+    List<JournalKeywordItemDto> emotionKeywords =
+        emotionAnalysisService.analyzeEmotion(truncatedContent);
 
-    return mapToAnalyzeResponse(journalId, savedAnalysis, savedKeywords);
-  }
+    List<JournalKeyword> savedKeywords = new ArrayList<>();
 
-  private List<JournalKeyword> saveKeywords(JournalAnalysis analysis,
-      List<JournalAiResultDto.KeywordItem> keywords) {
-    List<JournalKeyword> saved = new ArrayList<>();
+    for (JournalKeywordItemDto item : emotionKeywords) {
 
-    for (JournalAiResultDto.KeywordItem item : keywords) {
-      Keyword keyword = keywordRepository.findByName(item.name())
+      Keyword keyword = keywordRepository.findByName(item.keyword())
           .orElseGet(() -> keywordRepository.save(
-              Keyword.builder()
-                  .name(item.name())
-                  .build()
+              Keyword.builder().name(item.keyword()).build()
           ));
 
       JournalKeyword jk = journalKeywordRepository.save(
           JournalKeyword.builder()
               .score(item.score())
-              .journalAnalysis(analysis)
+              .journalAnalysis(savedAnalysis)
               .keyword(keyword)
               .build()
       );
-      saved.add(jk);
+
+      savedKeywords.add(jk);
     }
 
-    return saved;
+    return mapToAnalyzeResponse(journalId, savedAnalysis, savedKeywords);
   }
 
   public List<JournalKeywordItemDto> getKeywords(Long userId, Long journalId) {
