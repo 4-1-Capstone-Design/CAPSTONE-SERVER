@@ -42,6 +42,12 @@ public enum ErrorStatus {
   JOURNAL_NOT_FOUND(40403, HttpStatus.NOT_FOUND, "해당 저널을 찾을 수 없습니다."),
   JOURNAL_CONTENT_EMPTY(40004, HttpStatus.BAD_REQUEST, "저널 내용이 비어 있습니다."),
   NICKNAME_CONTAINS_BAD_WORD(40005, HttpStatus.BAD_REQUEST, "닉네임에 비속어를 사용할 수 없습니다."),
+  QUESTION_ALREADY_ANSWERED(40006, HttpStatus.BAD_REQUEST, "이미 답변한 질문입니다."),
+
+  /**
+   * 404 Not Found (question)
+   */
+  DAILY_QUESTION_NOT_FOUND(40404, HttpStatus.NOT_FOUND, "해당 일일 질문을 찾을 수 없습니다."),
   /**
    * 405 Method Not Allowed
    */
