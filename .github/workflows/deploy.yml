@@ -25,14 +25,19 @@ jobs:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew jib --image=${{ secrets.DOCKER_USERNAME }}/capstone-server:latest
+          DOCKER_USER=$(echo "$DOCKER_USERNAME" | tr '[:upper:]' '[:lower:]')
+          ./gradlew jib --image=$DOCKER_USER/capstone-server:latest
 
       # ML Server 이미지 빌드 & Docker Hub push
       - name: Build & Push ML Server image
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/capstone-ml:latest ./ml-server
-          docker push ${{ secrets.DOCKER_USERNAME }}/capstone-ml:latest
+          DOCKER_USER=$(echo "$DOCKER_USERNAME" | tr '[:upper:]' '[:lower:]')
+          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+          docker build -t $DOCKER_USER/capstone-ml:latest ./ml-server
+          docker push $DOCKER_USER/capstone-ml:latest
 
       # EC2에 SSH 접속해서 재배포
       - name: Deploy to EC2
@@ -43,7 +48,7 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           script: |
             cd ~/app
-            export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            export DOCKER_USERNAME=$(echo "${{ secrets.DOCKER_USERNAME }}" | tr '[:upper:]' '[:lower:]')
             /usr/local/bin/docker-compose pull
             /usr/local/bin/docker-compose up -d
             docker image prune -f
