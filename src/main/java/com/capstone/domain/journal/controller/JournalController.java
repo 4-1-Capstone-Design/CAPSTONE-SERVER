@@ -10,6 +10,8 @@ import com.capstone.domain.journal.service.JournalService;
 import com.capstone.global.common.ApiResponse;
 import com.capstone.global.common.SuccessStatus;
 import com.capstone.global.security.UserPrincipal;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 
+@Tag(name = "Journal", description = "모닝저널 관련 API")
 @RestController
 @RequestMapping("/api/v1/journals")
 @RequiredArgsConstructor
@@ -26,6 +29,7 @@ public class JournalController {
 
   private final JournalService journalService;
 
+  @Operation(summary = "모닝저널 작성")
   @PostMapping
   public ResponseEntity<ApiResponse<JournalCreateResponseDto>> createJournal(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
@@ -37,6 +41,7 @@ public class JournalController {
         .body(ApiResponse.created(SuccessStatus.CREATED, response));
   }
 
+  @Operation(summary = "모닝저널 삭제")
   @DeleteMapping("/{journalId}")
   public ResponseEntity<ApiResponse<Void>> deleteJournal(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
@@ -48,6 +53,7 @@ public class JournalController {
         .body(ApiResponse.success(SuccessStatus.OK));
   }
 
+  @Operation(summary = "모닝저널 목록 조회 (커서 페이징)")
   @GetMapping
   public ResponseEntity<ApiResponse<JournalCursorResponseDto>> getJournalList(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
@@ -61,6 +67,7 @@ public class JournalController {
     );
   }
 
+  @Operation(summary = "날짜별 모닝저널 조회")
   @GetMapping("/by-date")
   public ResponseEntity<ApiResponse<JournalGetResponseDto>> getJournalByDate(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
@@ -77,6 +84,7 @@ public class JournalController {
     );
   }
 
+  @Operation(summary = "AI 저널 분석 및 답장 생성")
   @PostMapping("/{journalId}/reply")
   public ResponseEntity<ApiResponse<JournalAnalyzeResponseDto>> createJournalReply(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
@@ -90,6 +98,7 @@ public class JournalController {
     );
   }
 
+  @Operation(summary = "저널 감정 키워드 조회")
   @GetMapping("/{journalId}/keywords")
   public ResponseEntity<ApiResponse<List<JournalKeywordItemDto>>> getKeywords(
       @AuthenticationPrincipal UserPrincipal userPrincipal,
