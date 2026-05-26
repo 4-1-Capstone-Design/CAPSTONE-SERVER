@@ -3,7 +3,6 @@ package com.capstone.domain.stats.service;
 import com.capstone.domain.journal.repository.JournalKeywordRepository;
 import com.capstone.domain.journal.repository.JournalRepository;
 import com.capstone.domain.question.repository.DailyQuestionRepository;
-import com.capstone.domain.question.repository.QuestionAnswerKeywordRepository;
 import com.capstone.domain.stats.dto.MonthlyStatsResponseDto;
 import com.capstone.domain.stats.dto.MonthlyStatsResponseDto.EmotionStatDto;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +20,6 @@ public class StatsService {
     private final JournalRepository journalRepository;
     private final JournalKeywordRepository journalKeywordRepository;
     private final DailyQuestionRepository dailyQuestionRepository;
-    private final QuestionAnswerKeywordRepository questionAnswerKeywordRepository;
 
     public MonthlyStatsResponseDto getMonthlyStats(Long userId, int year, int month) {
         long journalCount = journalRepository.countByUserIdAndMonth(userId, year, month);
@@ -34,18 +32,10 @@ public class StatsService {
     }
 
     private List<EmotionStatDto> buildEmotionDistribution(Long userId, int year, int month) {
-        // 저널 키워드와 질문 답변 키워드를 합산
         Map<String, Long> countMap = new LinkedHashMap<>();
 
         List<Object[]> journalStats = journalKeywordRepository.findMonthlyKeywordStats(userId, year, month);
         for (Object[] row : journalStats) {
-            String name = (String) row[0];
-            long count = (Long) row[1];
-            countMap.merge(name, count, Long::sum);
-        }
-
-        List<Object[]> answerStats = questionAnswerKeywordRepository.findMonthlyKeywordStats(userId, year, month);
-        for (Object[] row : answerStats) {
             String name = (String) row[0];
             long count = (Long) row[1];
             countMap.merge(name, count, Long::sum);
