@@ -20,6 +20,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 @RequiredArgsConstructor
@@ -77,9 +79,15 @@ public class UserService {
     questionAnswerRepository.deleteByUserId(userId);
     dailyQuestionRepository.deleteByUserId(userId);
 
-    refreshTokenRepository.deleteById(userId);
-
     userRepository.deleteById(userId);
+
+    // DB 커밋 성공 이후에 Redis 삭제 — 커밋 전 삭제 시 DB 롤백돼도 토큰이 사라지는 불일치 방지
+    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+      @Override
+      public void afterCommit() {
+        refreshTokenRepository.deleteById(userId);
+      }
+    });
   }
 
   private String resolveCloverComment(Long clover) {
