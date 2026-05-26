@@ -214,6 +214,26 @@ public class JournalService {
     return mapToAnalyzeResponse(journalId, savedAnalysis, savedKeywords);
   }
 
+  public JournalReplyResponseDto getJournalReply(Long userId, Long journalId) {
+    Journal journal = journalRepository.findByIdAndIsDeletedFalse(journalId)
+        .orElseThrow(() -> new BusinessException(ErrorStatus.JOURNAL_NOT_FOUND));
+
+    if (!journal.getUser().getId().equals(userId)) {
+      throw new BusinessException(ErrorStatus.FORBIDDEN_USER);
+    }
+
+    JournalReply reply = journalReplyRepository.findTopByJournalIdOrderByCreatedAtDesc(journalId)
+        .orElseThrow(() -> new BusinessException(ErrorStatus.JOURNAL_REPLY_NOT_FOUND));
+
+    return JournalReplyResponseDto.builder()
+        .replyId(reply.getId())
+        .journalId(journalId)
+        .content(reply.getContent())
+        .modelName(reply.getModelName())
+        .createdAt(reply.getCreatedAt())
+        .build();
+  }
+
   public List<JournalKeywordItemDto> getKeywords(Long userId, Long journalId) {
 
     Journal journal = journalRepository.findByIdAndIsDeletedFalse(journalId)
