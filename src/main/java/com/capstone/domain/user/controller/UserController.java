@@ -1,5 +1,6 @@
 package com.capstone.domain.user.controller;
 
+import com.capstone.domain.user.dto.request.WithdrawRequestDto;
 import com.capstone.domain.user.dto.response.MyPageResponseDto;
 import com.capstone.domain.user.service.UserService;
 import com.capstone.global.common.ApiResponse;
@@ -7,6 +8,7 @@ import com.capstone.global.common.SuccessStatus;
 import com.capstone.global.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -27,5 +29,15 @@ public class UserController {
   ) {
     MyPageResponseDto response = userService.getMyPage(userPrincipal.getUserId());
     return ResponseEntity.ok(ApiResponse.success(SuccessStatus.OK, response));
+  }
+
+  @Operation(summary = "회원 탈퇴")
+  @DeleteMapping("/me")
+  public ResponseEntity<ApiResponse<Void>> withdrawUser(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @Valid @RequestBody WithdrawRequestDto request
+  ) {
+    userService.withdrawUser(userPrincipal.getUserId(), request);
+    return ResponseEntity.ok(ApiResponse.success(SuccessStatus.OK));
   }
 }
