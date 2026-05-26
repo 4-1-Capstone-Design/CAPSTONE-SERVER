@@ -31,15 +31,16 @@ def predict(req: Request):
 
     probs = torch.nn.functional.softmax(outputs.logits, dim=-1)
 
-    # Top-3 추출
+    # Top-3 추출 후 합이 1이 되도록 정규화
     topk = torch.topk(probs, 3)
+    topk_sum = topk.values[0].sum().item()
 
     results = []
     for i in range(3):
         idx = topk.indices[0][i].item()
         results.append({
             "label": label_map[idx],
-            "score": float(topk.values[0][i].item())
+            "score": float(topk.values[0][i].item()) / topk_sum
         })
 
     return {
