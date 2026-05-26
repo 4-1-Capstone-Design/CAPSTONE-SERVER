@@ -8,6 +8,8 @@ RUN pip install --no-cache-dir -r requirements.txt \
 
 COPY main.py .
 
+ENV HF_HUB_TIMEOUT=300
+
 # 이미지 빌드 시 모델 미리 다운로드
 RUN python -c "\
 from transformers import AutoTokenizer, AutoModelForSequenceClassification; \
