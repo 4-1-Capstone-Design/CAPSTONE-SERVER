@@ -4,6 +4,7 @@ import com.capstone.domain.journal.dto.response.JournalAnalyzeResponseDto;
 import com.capstone.domain.journal.dto.response.JournalCursorResponseDto;
 import com.capstone.domain.journal.dto.response.JournalGetResponseDto;
 import com.capstone.domain.journal.dto.response.JournalKeywordItemDto;
+import com.capstone.domain.journal.dto.response.JournalReplyResponseDto;
 import com.capstone.domain.journal.service.JournalService;
 import com.capstone.global.common.ApiResponse;
 import com.capstone.global.common.SuccessStatus;
@@ -63,6 +64,20 @@ public class JournalController {
     LocalDate date = LocalDate.of(year, month, day);
 
     JournalGetResponseDto response = journalService.getJournalByDate(userPrincipal.getUserId(), date);
+
+    return ResponseEntity.ok(
+        ApiResponse.success(SuccessStatus.OK, response)
+    );
+  }
+
+  @Operation(summary = "AI 저널 답장 조회")
+  @GetMapping("/{journalId}/reply")
+  public ResponseEntity<ApiResponse<JournalReplyResponseDto>> getJournalReply(
+      @AuthenticationPrincipal UserPrincipal userPrincipal,
+      @PathVariable Long journalId
+  ) {
+    JournalReplyResponseDto response =
+        journalService.getJournalReply(userPrincipal.getUserId(), journalId);
 
     return ResponseEntity.ok(
         ApiResponse.success(SuccessStatus.OK, response)
