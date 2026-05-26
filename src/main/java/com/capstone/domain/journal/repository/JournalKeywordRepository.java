@@ -6,9 +6,25 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface JournalKeywordRepository extends JpaRepository<JournalKeyword, Long> {
+
+  @Query("""
+      select jk.keyword.name, sum(jk.score)
+      from JournalKeyword jk
+      join jk.journalAnalysis ja
+      join ja.journal j
+      where j.user.id = :userId
+        and j.isDeleted = false
+        and j.journalDate >= :since
+      group by jk.keyword.name
+      """)
+  List<Object[]> findRecentEmotionScores(
+      @Param("userId") Long userId,
+      @Param("since") LocalDate since
+  );
 
   @Modifying
   @Query("""
