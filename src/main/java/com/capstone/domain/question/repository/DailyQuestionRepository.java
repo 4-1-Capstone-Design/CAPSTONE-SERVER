@@ -2,6 +2,7 @@ package com.capstone.domain.question.repository;
 
 import com.capstone.domain.question.entity.DailyQuestion;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -40,4 +41,8 @@ public interface DailyQuestionRepository extends JpaRepository<DailyQuestion, Lo
             @Param("year") int year,
             @Param("month") int month
     );
+
+    @Modifying
+    @Query("delete from DailyQuestion dq where dq.user.id = :userId")
+    void deleteByUserId(@Param("userId") Long userId);
 }

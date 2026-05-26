@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -40,4 +41,8 @@ public interface JournalRepository extends JpaRepository<Journal, Long> {
       @Param("year") int year,
       @Param("month") int month
   );
+
+  @Modifying
+  @Query("delete from Journal j where j.user.id = :userId")
+  void deleteByUserId(@Param("userId") Long userId);
 }

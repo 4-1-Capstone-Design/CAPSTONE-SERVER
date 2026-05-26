@@ -1,13 +1,27 @@
 package com.capstone.domain.user.service;
 
+import com.capstone.domain.auth.repository.RefreshTokenRepository;
+import com.capstone.domain.clover.repository.CloverHistoryRepository;
+import com.capstone.domain.journal.repository.JournalAnalysisRepository;
+import com.capstone.domain.journal.repository.JournalEmotionRepository;
+import com.capstone.domain.journal.repository.JournalKeywordRepository;
+import com.capstone.domain.journal.repository.JournalReplyRepository;
+import com.capstone.domain.journal.repository.JournalRepository;
+import com.capstone.domain.question.repository.DailyQuestionRepository;
+import com.capstone.domain.question.repository.QuestionAnswerKeywordRepository;
+import com.capstone.domain.question.repository.QuestionAnswerRepository;
+import com.capstone.domain.user.dto.request.WithdrawRequestDto;
 import com.capstone.domain.user.dto.response.MyPageResponseDto;
 import com.capstone.domain.user.entity.User;
 import com.capstone.domain.user.repository.UserRepository;
 import com.capstone.global.error.BusinessException;
 import com.capstone.global.error.ErrorStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 @RequiredArgsConstructor
@@ -15,6 +29,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
   private final UserRepository userRepository;
+  private final PasswordEncoder passwordEncoder;
+  private final RefreshTokenRepository refreshTokenRepository;
+  private final JournalEmotionRepository journalEmotionRepository;
+  private final JournalKeywordRepository journalKeywordRepository;
+  private final JournalAnalysisRepository journalAnalysisRepository;
+  private final JournalReplyRepository journalReplyRepository;
+  private final JournalRepository journalRepository;
+  private final CloverHistoryRepository cloverHistoryRepository;
+  private final QuestionAnswerKeywordRepository questionAnswerKeywordRepository;
+  private final QuestionAnswerRepository questionAnswerRepository;
+  private final DailyQuestionRepository dailyQuestionRepository;
 
   public User getUserById(Long userId) {
     return userRepository.findById(userId)
@@ -31,6 +56,38 @@ public class UserService {
         user.getCloverBalance(),
         resolveCloverComment(user.getCloverBalance())
     );
+  }
+
+  @Transactional
+  public void withdrawUser(Long userId, WithdrawRequestDto request) {
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new BusinessException(ErrorStatus.USER_NOT_FOUND));
+
+    if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+      throw new BusinessException(ErrorStatus.INVALID_PASSWORD);
+    }
+
+    journalEmotionRepository.deleteByUserId(userId);
+    journalKeywordRepository.deleteByUserId(userId);
+    journalAnalysisRepository.deleteByUserId(userId);
+    journalReplyRepository.deleteByUserId(userId);
+    journalRepository.deleteByUserId(userId);
+
+    cloverHistoryRepository.deleteByUserId(userId);
+
+    questionAnswerKeywordRepository.deleteByUserId(userId);
+    questionAnswerRepository.deleteByUserId(userId);
+    dailyQuestionRepository.deleteByUserId(userId);
+
+    userRepository.deleteById(userId);
+
+    // DB 커밋 성공 이후에 Redis 삭제 — 커밋 전 삭제 시 DB 롤백돼도 토큰이 사라지는 불일치 방지
+    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+      @Override
+      public void afterCommit() {
+        refreshTokenRepository.deleteById(userId);
+      }
+    });
   }
 
   private String resolveCloverComment(Long clover) {
